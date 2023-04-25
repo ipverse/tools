@@ -19,7 +19,7 @@ applies the ban for a specified duration.
 ### Example
 
 ```bash
-./as_network_blocker.sh --silent 12345 1d
+./crowdsec-ban-as.sh --silent 12345 1d
 ```
 
 This command will ban all networks announced by AS12345 for 1 day, and the `--silent` flag will suppress the output.
