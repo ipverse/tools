@@ -54,6 +54,7 @@ Now, the script will run daily with the specified ASN and duration.
 ## Requirements
 
 - [Crowdsec](https://crowdsec.net/) and `cscli` command should be installed and configured.
+- A Crowdsec Bouncer has to be up and running
 - `curl` should be installed on the system.
 
 ## Notes
