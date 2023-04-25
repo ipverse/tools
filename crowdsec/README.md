@@ -2,8 +2,8 @@
 
 ## crowdsec-ban-as.sh
 
-This Bash script bans all announced networks for a given Autonomous System (AS) using Crowdsec's `cscli` command. The script fetches network ranges for both IPv4 and IPv6 and 
-applies the ban for a specified duration.
+This Bash script bans all announced networks for a given Autonomous System (AS) using Crowdsec's `cscli` command. The script fetches network ranges for both IPv4 and IPv6  
+from the [ipverse-asn-ip](https://github.com/ipverse/asn-ip) repository and applies the ban for a specified duration.
 
 ### Usage
 
@@ -22,8 +22,7 @@ applies the ban for a specified duration.
 ./crowdsec-ban-as.sh --silent 12345 1d
 ```
 
-This command fetches data from the [ipverse-asn-ip](https://github.com/ipverse/asn-ip) repository and bans networks announced by AS12345 for 1 day, and the `--silent` flag will 
-suppress the output.
+This command bans networks announced by AS12345 for 1 day, and the `--silent` flag will suppress the output.
 
 ### Cron Job Operation
 
