@@ -11,17 +11,30 @@ This Bash script bans all announced networks for a given Autonomous System (AS) 
 ```
 
 - `--silent`: Optional flag to suppress the output, suitable for running as a cron job.
-- `<ASN>`: Autonomous System Number, e.g. 12345.
+- `<ASN>`: Autonomous System Number, e.g. 398324.
 - `<duration>`: Duration of the ban, e.g. 1h, 2d, or 1w. The format is a positive integer followed by 's' (seconds), 'm' (minutes), 'h' (hours), 'd' (days), 'w' (weeks), 'M' 
 (months), or 'y' (years).
 
 ### Example
 
 ```bash
-./crowdsec-ban-as.sh --silent 12345 1d
+./crowdsec-ban-as.sh --silent 398324 1d
 ```
 
-This command bans networks announced by AS12345 for 1 day, and the `--silent` flag will suppress the output.
+This command bans networks announced by AS398324 for 1 day, and the `--silent` flag will suppress the output.
+
+### Verify
+
+Use `cscli decisions list` to see what bans are currently in place. It should output something similar to this:
+```
++---------+--------+-------------------------+---------------------------+--------+---------+----+--------+---------------------+----------+
+|   ID    | Source |       Scope:Value       |          Reason           | Action | Country | AS | Events |     expiration      | Alert ID |
++---------+--------+-------------------------+---------------------------+--------+---------+----+--------+---------------------+----------+
+| 3520025 | cscli  | Range:2620:96:e000::/48 | Manually banning AS398324 | ban    |         |    | 1      | 23h50m30.707204856s | 459      |
+| 3520024 | cscli  | Range:167.94.138.0/24   | Manually banning AS398324 | ban    |         |    | 1      | 23h50m30.707199967s | 458      |
+| 3520023 | cscli  | Range:162.142.125.0/24  | Manually banning AS398324 | ban    |         |    | 1      | 23h50m30.707197933s | 457      |
++---------+--------+-------------------------+---------------------------+--------+---------+----+--------+---------------------+----------+
+```
 
 ### Cron Job Operation
 
