@@ -22,7 +22,8 @@ applies the ban for a specified duration.
 ./crowdsec-ban-as.sh --silent 12345 1d
 ```
 
-This command will ban all networks announced by AS12345 for 1 day, and the `--silent` flag will suppress the output.
+This command fetches data from the [ipverse-asn-ip](https://github.com/ipverse/asn-ip) repository and bans networks announced by AS12345 for 1 day, and the `--silent` flag will 
+suppress the output.
 
 ### Cron Job Operation
 
