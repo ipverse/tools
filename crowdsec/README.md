@@ -1,6 +1,6 @@
 # ipverse-tools-crowdsec
 
-## crowdsec-ban-asn.sh
+## crowdsec-ban-as.sh
 
 This Bash script bans all announced networks for a given Autonomous System (AS) using Crowdsec's `cscli` command. The script fetches network ranges for both IPv4 and IPv6 and 
 applies the ban for a specified duration.
@@ -8,7 +8,7 @@ applies the ban for a specified duration.
 ### Usage
 
 ```bash
-./crowdsec-ban-asn.sh [--silent] <ASN> <duration>
+./crowdsec-ban-as.sh [--silent] <ASN> <duration>
 ```
 
 - `--silent`: Optional flag to suppress the output, suitable for running as a cron job.
@@ -31,14 +31,14 @@ To run this script as a cron job, you can place it in the `/etc/cron.daily` dire
 1. Create a new script file in `/etc/cron.daily`:
 
    ```
-   sudo nano /etc/cron.daily/crowdsec-ban-asn
+   sudo nano /etc/cron.daily/crowdsec-ban-as
    ```
 
 2. Add the following content to the script:
 
    ```sh
    #!/bin/sh
-   /usr/local/bin/crowdsec-ban-asn.sh --silent 398324 24h01m
+   /usr/local/bin/crowdsec-ban-as.sh --silent 398324 24h01m
    ```
 
 3. Save the file and exit the editor.
@@ -46,7 +46,7 @@ To run this script as a cron job, you can place it in the `/etc/cron.daily` dire
 4. Make the script executable:
 
    ```
-   sudo chmod +x /etc/cron.daily/crowdsec-ban-asn
+   sudo chmod +x /etc/cron.daily/crowdsec-ban-as
    ```
 
 Now, the script will run daily with the specified ASN and duration.
