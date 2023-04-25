@@ -1,6 +1,7 @@
 # ipverse-tools
 
-This repository contains tools to make use of the ipverse data.
+This repository contains tools that enable you to work with the ipverse data, a comprehensive database of IP addresses and associated metadata. These tools provide functionality 
+for querying, analyzing, and visualizing the data to gain insights into network activity and security threats.
 
 ## Crowdsec
 
