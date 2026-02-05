@@ -2,6 +2,8 @@
 
 Reverse lookup: given an IP address, find the Autonomous System it belongs to. Uses [ipverse/as-ip-blocks](https://github.com/ipverse/as-ip-blocks) as the data source.
 
+This is an example script meant as a starting point. It is not actively maintained or supported.
+
 ## How it works
 
 On first run, the tool downloads the `as-ip-blocks` [release tarball](https://github.com/ipverse/as-ip-blocks/releases/tag/latest) (~17 MB), reads all `aggregated.json` files from it in memory, and builds a prefix lookup cache (`data/ip2as.db.gz`, ~8 MB). The tarball itself is not kept.
