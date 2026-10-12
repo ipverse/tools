@@ -15,7 +15,7 @@ def log(msg, **kw):
 def download(dest):
     log(f"Downloading {TARBALL_URL} ...")
     req = urllib.request.Request(TARBALL_URL, headers={"User-Agent": "ip2as/1.0"})
-    with urllib.request.urlopen(req) as resp, open(dest, "wb") as f:
+    with urllib.request.urlopen(req, timeout=60) as resp, open(dest, "wb") as f:
         total = int(resp.headers.get("Content-Length") or 0)
         done = 0
         while chunk := resp.read(65536):
@@ -64,15 +64,22 @@ def ensure_db(data_dir, force):
     if force or not os.path.exists(db_path) or (time.time() - os.path.getmtime(db_path)) > STALE_SECONDS:
         os.makedirs(data_dir, exist_ok=True)
         tarball = os.path.join(data_dir, "as-ip-blocks.tar.gz")
+        tmp_path = db_path + ".tmp"
         try:
             download(tarball)
             db = build_db(tarball)
-            with gzip.open(db_path, "wt", encoding="utf-8") as f:
+            with gzip.open(tmp_path, "wt", encoding="utf-8") as f:
                 json.dump(db, f, separators=(",", ":"))
+            os.replace(tmp_path, db_path)
             log(f"  Saved {db_path} ({os.path.getsize(db_path)/1e6:.1f} MB)")
+        except Exception as e:
+            if force or not os.path.exists(db_path):
+                raise
+            log(f"Update failed ({e}), using existing cache")
         finally:
-            if os.path.exists(tarball):
-                os.unlink(tarball)
+            for path in (tarball, tmp_path):
+                if os.path.exists(path):
+                    os.unlink(path)
     with gzip.open(db_path, "rt", encoding="utf-8") as f:
         return json.load(f)
 
