@@ -8,7 +8,7 @@ This is an example script meant as a starting point. It is not actively maintain
 
 On first run, the tool downloads the `as-ip-blocks` [release tarball](https://github.com/ipverse/as-ip-blocks/releases/tag/latest) (~17 MB), reads all `aggregated.json` files from it in memory, and builds a prefix lookup cache (`data/ip2as.db.gz`, ~8 MB). The tarball itself is not kept.
 
-On subsequent runs, the cache is loaded directly. If it's older than 24 hours, it re-downloads automatically. If the update fails, the existing cache is used. Use `--force-update` to skip the staleness check.
+On subsequent runs, the cache is loaded directly. If it's older than 24 hours, it re-downloads automatically. If the update fails, the existing cache is used and the next attempt happens 24 hours later. Use `--force-update` to skip the staleness check; it exits with an error if the update fails. An unreadable cache is rebuilt.
 
 Lookups work by longest-prefix-match against ~515k prefixes from ~97k autonomous systems. Both IPv4 and IPv6 are supported. You can pass a plain IP or a CIDR.
 
