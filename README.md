@@ -4,7 +4,7 @@ This repository contains example scripts for working with ipverse data. They are
 
 ## ip2as
 
-The `ip2as` folder contains a Python CLI tool that does the reverse of [as-ip-blocks](https://github.com/ipverse/as-ip-blocks): given an IP address, find which AS it belongs to. Uses the as-ip-blocks data, supports IPv4/IPv6, and needs nothing beyond Python 3.
+The `ip2as` folder contains a Python CLI tool that does the reverse of [as-ip-blocks](https://github.com/ipverse/as-ip-blocks): given an IP address, find which AS it belongs to. Uses the as-ip-blocks data, supports IPv4/IPv6, and needs nothing beyond Python 3.8+.
 
 ## crowdsec
 

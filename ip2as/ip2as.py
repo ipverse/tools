@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Look up the Autonomous System (AS) for an IP address using ipverse data."""
 
-import argparse, gzip, ipaddress, json, os, sys, tarfile, time, urllib.request
+import argparse, contextlib, gzip, ipaddress, json, os, sys, tarfile, tempfile, time, urllib.request
 
 TARBALL_URL = "https://github.com/ipverse/as-ip-blocks/releases/download/latest/as-ip-blocks.tar.gz"
 DEFAULT_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STALE_SECONDS = 86400
+DOWNLOAD_SECONDS = 600
 
 
 def log(msg, **kw):
@@ -15,17 +16,22 @@ def log(msg, **kw):
 def download(dest):
     log(f"Downloading {TARBALL_URL} ...")
     req = urllib.request.Request(TARBALL_URL, headers={"User-Agent": "ip2as/1.0"})
-    with urllib.request.urlopen(req) as resp, open(dest, "wb") as f:
-        total = int(resp.headers.get("Content-Length") or 0)
-        done = 0
-        while chunk := resp.read(65536):
-            f.write(chunk)
-            done += len(chunk)
-            if total:
-                log(f"\r  {done/1e6:.1f} / {total/1e6:.1f} MB ({done*100//total}%)", end="")
-            else:
-                log(f"\r  {done/1e6:.1f} MB", end="")
-    log("")
+    deadline = time.monotonic() + DOWNLOAD_SECONDS
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp, open(dest, "wb") as f:
+            total = int(resp.headers.get("Content-Length") or 0)
+            done = 0
+            while chunk := resp.read(65536):
+                if time.monotonic() > deadline:
+                    raise TimeoutError(f"download took longer than {DOWNLOAD_SECONDS}s")
+                f.write(chunk)
+                done += len(chunk)
+                if total:
+                    log(f"\r  {done/1e6:.1f} / {total/1e6:.1f} MB ({done*100//total}%)", end="")
+                else:
+                    log(f"\r  {done/1e6:.1f} MB", end="")
+    finally:
+        log("")
 
 
 def build_db(tarball_path):
@@ -59,22 +65,54 @@ def build_db(tarball_path):
     return entries
 
 
-def ensure_db(data_dir, force):
-    db_path = os.path.join(data_dir, "ip2as.db.gz")
-    if force or not os.path.exists(db_path) or (time.time() - os.path.getmtime(db_path)) > STALE_SECONDS:
-        os.makedirs(data_dir, exist_ok=True)
-        tarball = os.path.join(data_dir, "as-ip-blocks.tar.gz")
-        try:
-            download(tarball)
-            db = build_db(tarball)
-            with gzip.open(db_path, "wt", encoding="utf-8") as f:
-                json.dump(db, f, separators=(",", ":"))
-            log(f"  Saved {db_path} ({os.path.getsize(db_path)/1e6:.1f} MB)")
-        finally:
-            if os.path.exists(tarball):
-                os.unlink(tarball)
+def update_db(data_dir, db_path):
+    fd, tarball = tempfile.mkstemp(dir=data_dir, suffix=".tar.gz")
+    os.close(fd)
+    fd, tmp_path = tempfile.mkstemp(dir=data_dir, suffix=".tmp")
+    os.close(fd)
+    try:
+        download(tarball)
+        db = build_db(tarball)
+        if not db["4"] and not db["6"]:
+            raise ValueError("no prefixes found in tarball")
+        with gzip.open(tmp_path, "wt", encoding="utf-8") as f:
+            json.dump(db, f, separators=(",", ":"))
+        os.chmod(tmp_path, 0o644)
+        os.replace(tmp_path, db_path)
+        log(f"  Saved {db_path} ({os.path.getsize(db_path)/1e6:.1f} MB)")
+        return db
+    finally:
+        for path in (tarball, tmp_path):
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(path)
+
+
+def load_db(db_path):
     with gzip.open(db_path, "rt", encoding="utf-8") as f:
         return json.load(f)
+
+
+def ensure_db(data_dir, force):
+    db_path = os.path.join(data_dir, "ip2as.db.gz")
+    os.makedirs(data_dir, exist_ok=True)
+    if force or not os.path.exists(db_path) or (time.time() - os.path.getmtime(db_path)) > STALE_SECONDS:
+        try:
+            return update_db(data_dir, db_path)
+        except Exception as e:
+            if force or not os.path.exists(db_path):
+                raise
+            try:
+                db = load_db(db_path)
+            except (OSError, EOFError, ValueError):
+                raise e
+            log(f"Update failed ({e}), using existing cache")
+            os.utime(db_path)  # retry after STALE_SECONDS, not on every run
+            return db
+    try:
+        return load_db(db_path)
+    except (OSError, EOFError, ValueError) as e:
+        log(f"Cache unreadable ({e}), rebuilding")
+        return update_db(data_dir, db_path)
 
 
 def lookup(db, query):
