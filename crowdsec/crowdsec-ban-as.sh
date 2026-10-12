@@ -16,7 +16,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [[ -z "$1" || -z "$2" ]]; then
-  echo "Usage: $0 [--silent] <ASN> <duration>"
+  echo "Usage: $0 [--silent] <ASN> <duration>" >&2
   exit 1
 fi
 
@@ -27,9 +27,10 @@ if [[ ! "$asn" =~ ^[0-9]+$ ]]; then
 fi
 
 base_url="https://raw.githubusercontent.com/ipverse/as-ip-blocks/refs/heads/master/as/$asn"
+curl_opts=(-fsS --retry 3 --max-time 30)
 
-if ! ipv4_networks=$(curl -fsS "${base_url}/ipv4-aggregated.txt") ||
-   ! ipv6_networks=$(curl -fsS "${base_url}/ipv6-aggregated.txt"); then
+if ! ipv4_networks=$(curl "${curl_opts[@]}" "${base_url}/ipv4-aggregated.txt") ||
+   ! ipv6_networks=$(curl "${curl_opts[@]}" "${base_url}/ipv6-aggregated.txt"); then
   echo "Failed to fetch networks for AS$asn" >&2
   exit 1
 fi
@@ -41,9 +42,17 @@ if [[ -z "$networks" ]]; then
   exit 1
 fi
 
-echo "$networks" | while read -r network; do
+failed=0
+while read -r network; do
   if [[ $SILENT -eq 0 ]]; then
     echo "Banning network $network for $2..."
-  fi
-  cscli decisions add --range "$network" --duration "$2" --warning --reason "Manually banning AS$asn"
-done
+    cscli decisions add --range "$network" --duration "$2" --warning --reason "Manually banning AS$asn"
+  else
+    cscli decisions add --range "$network" --duration "$2" --warning --reason "Manually banning AS$asn" > /dev/null
+  fi || failed=$((failed + 1))
+done <<< "$networks"
+
+if [[ $failed -gt 0 ]]; then
+  echo "Failed to ban $failed network(s) for AS$asn" >&2
+  exit 1
+fi
