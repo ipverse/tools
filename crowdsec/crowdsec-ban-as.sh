@@ -20,7 +20,7 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
-base_url="https://raw.githubusercontent.com/ipverse/asn-ip/master/as/$1"
+base_url="https://raw.githubusercontent.com/ipverse/as-ip-blocks/refs/heads/master/as/$1"
 
 ipv4_networks=$(curl -s "${base_url}/ipv4-aggregated.txt" | grep -v "^#")
 ipv6_networks=$(curl -s "${base_url}/ipv6-aggregated.txt" | grep -v "^#")
