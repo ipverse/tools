@@ -15,27 +15,35 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$1" ]]; then
+if [[ -z "$1" || -z "$2" ]]; then
   echo "Usage: $0 [--silent] <ASN> <duration>"
   exit 1
 fi
 
-base_url="https://raw.githubusercontent.com/ipverse/as-ip-blocks/refs/heads/master/as/$1"
-
-ipv4_networks=$(curl -s "${base_url}/ipv4-aggregated.txt" | grep -v "^#")
-ipv6_networks=$(curl -s "${base_url}/ipv6-aggregated.txt" | grep -v "^#")
-
-if [[ -n "$ipv4_networks" && -n "$ipv6_networks" ]]; then
-  networks="$ipv4_networks"$'\n'"$ipv6_networks"
-elif [[ -n "$ipv4_networks" ]]; then
-  networks="$ipv4_networks"
-elif [[ -n "$ipv6_networks" ]]; then
-  networks="$ipv6_networks"
+asn="${1#[Aa][Ss]}"
+if [[ ! "$asn" =~ ^[0-9]+$ ]]; then
+  echo "Invalid ASN: $1" >&2
+  exit 1
 fi
 
-echo "$networks" | while read network; do
+base_url="https://raw.githubusercontent.com/ipverse/as-ip-blocks/refs/heads/master/as/$asn"
+
+if ! ipv4_networks=$(curl -fsS "${base_url}/ipv4-aggregated.txt") ||
+   ! ipv6_networks=$(curl -fsS "${base_url}/ipv6-aggregated.txt"); then
+  echo "Failed to fetch networks for AS$asn" >&2
+  exit 1
+fi
+
+networks=$(printf '%s\n%s\n' "$ipv4_networks" "$ipv6_networks" | grep -v -e "^#" -e "^$")
+
+if [[ -z "$networks" ]]; then
+  echo "No announced networks for AS$asn" >&2
+  exit 1
+fi
+
+echo "$networks" | while read -r network; do
   if [[ $SILENT -eq 0 ]]; then
     echo "Banning network $network for $2..."
   fi
-  cscli decisions add --range "$network" --duration "$2" --warning --reason "Manually banning AS$1"
+  cscli decisions add --range "$network" --duration "$2" --warning --reason "Manually banning AS$asn"
 done
